@@ -45,7 +45,7 @@ app.post('/uploadPhotos', upload.array('myFiles', 12), (req, res, next) => {
     error.httpStatusCode = 400
     return next(error)
   }
-  var images = [];
+  var searchTerm = { id: parseInt(req.body.myID) };
   files.map((file) => {
     var img = fs.readFileSync(file.path);
     var encode_image = img.toString('base64');
@@ -53,15 +53,12 @@ app.post('/uploadPhotos', upload.array('myFiles', 12), (req, res, next) => {
       contentType: file.mimetype,
       image:  new Buffer(encode_image, 'base64')
     };
-    images.push(finalImg);
+    dbo.collection(RESTAURANT_COLLECTION).updateOne(searchTerm, {$addToSet: {Images: finalImg}}, (err, result) => {
+      if (err) return console.log(err)
+      console.log('saved to database')
+    })
   });
-  var searchTerm = { id: parseInt(req.body.myID) };
-  console.log(searchTerm);
-  dbo.collection(RESTAURANT_COLLECTION).updateOne(searchTerm, {$addToSet: {Images: images}}, (err, result) => {
-    if (err) return console.log(err)
-    console.log('saved to database')
-    res.redirect('/')
-  })
+  res.redirect('/')
 })
 MongoClient.connect(CONNECTION_URL, function (err, database) {
   if (err)
